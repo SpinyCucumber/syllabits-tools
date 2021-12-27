@@ -23,7 +23,7 @@ def set_all(collection_path, key, value):
 @collection.command('removeall')
 @click.argument('collection_path', type=click.Path(exists=True))
 @click.argument('key')
-def set_all(collection_path, key):
+def remove_all(collection_path, key):
     with open(collection_path, 'r+') as file:
         data = json.load(file)
         # Remove key of all poems
@@ -60,6 +60,20 @@ def use_text(collection_path, text_path):
 
         text_file.close()
         collection_file.close()
+
+@collection.command('splitkey')
+@click.argument('collection_path', type=click.Path(exists=True))
+def split_key(collection_path):
+    with open(collection_path, 'r+') as file:
+        data = json.load(file)
+        # Convert key of each poem line from string to array of chars
+        for poem_data in data:
+            for line_data in poem_data['lines']:
+                line_data['key'] = list(line_data['key'])
+        file.seek(0)
+        json.dump(data, file, indent=4)
+        file.truncate()
+        file.close()
 
 if __name__ == '__main__':
     collection()
