@@ -16,7 +16,7 @@ def set_all(collection_path, key, value):
         for poem_data in data:
             poem_data[key] = value
         file.seek(0)
-        json.dump(data, file, indent=4)
+        json.dump(data, file)
         file.truncate()
         file.close()
 
@@ -30,7 +30,7 @@ def remove_all(collection_path, key):
         for poem_data in data:
             del poem_data[key]
         file.seek(0)
-        json.dump(data, file, indent=4)
+        json.dump(data, file)
         file.truncate()
         file.close()
 
@@ -55,7 +55,7 @@ def use_text(collection_path, text_path):
         
         # Rewrite collection
         collection_file.seek(0)
-        json.dump(data, collection_file, indent=4)
+        json.dump(data, collection_file)
         collection_file.truncate()
 
         text_file.close()
@@ -71,7 +71,7 @@ def split_key(collection_path):
             for line_data in poem_data['lines']:
                 line_data['key'] = list(line_data['key'])
         file.seek(0)
-        json.dump(data, file, indent=4)
+        json.dump(data, file)
         file.truncate()
         file.close()
 
