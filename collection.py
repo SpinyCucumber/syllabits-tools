@@ -5,42 +5,45 @@ import click
 def collection():
     pass
 
+def collection_transformer(func):
+    @click.argument('path', type=click.Path(exists=True))
+    def wrapped(path, *args, **kwargs):
+        with open(path, 'r+') as file:
+            data = json.load(file)
+            # Transform collection data and write aback to file
+            func(data, *args, **kwargs)
+            file.seek(0)
+            json.dump(data, file)
+            file.truncate()
+            file.close()
+    return wrapped
+
+def poem_transformer(func):
+    @collection_transformer
+    def wrapped(data, *args, **kwargs):
+        # Apply transformer to each poem in collection
+        for poem in data:
+            func(poem, *args, **kwargs)
+    return wrapped
+
 @collection.command('setall')
-@click.argument('collection_path', type=click.Path(exists=True))
 @click.argument('key')
 @click.argument('value')
-def set_all(collection_path, key, value):
-    with open(collection_path, 'r+') as file:
-        data = json.load(file)
-        # Set key of all poems
-        for poem_data in data:
-            poem_data[key] = value
-        file.seek(0)
-        json.dump(data, file)
-        file.truncate()
-        file.close()
+@poem_transformer
+def set_all(poem, key, value):
+    poem[key] = value
 
 @collection.command('removeall')
-@click.argument('collection_path', type=click.Path(exists=True))
 @click.argument('key')
-def remove_all(collection_path, key):
-    with open(collection_path, 'r+') as file:
-        data = json.load(file)
-        # Remove key of all poems
-        for poem_data in data:
-            del poem_data[key]
-        file.seek(0)
-        json.dump(data, file)
-        file.truncate()
-        file.close()
+@poem_transformer
+def remove_all(poem, key):
+    del poem[key]
 
 @collection.command('usetext')
-@click.argument('collection_path', type=click.Path(exists=True))
 @click.argument('text_path', type=click.Path(exists=True))
-def use_text(collection_path, text_path):
-    with open(collection_path, 'r+') as collection_file, open(text_path, 'r') as text_file:
-        data = json.load(collection_file)
-
+@collection_transformer
+def use_text(data, text_path):
+    with open(text_path, 'r') as text_file:
         poem_index = 0
         line_index = 0
         for line in text_file:
@@ -52,28 +55,21 @@ def use_text(collection_path, text_path):
             else:
                 poem_index += 1
                 line_index = 0
-        
-        # Rewrite collection
-        collection_file.seek(0)
-        json.dump(data, collection_file)
-        collection_file.truncate()
-
         text_file.close()
-        collection_file.close()
 
 @collection.command('splitkey')
-@click.argument('collection_path', type=click.Path(exists=True))
-def split_key(collection_path):
-    with open(collection_path, 'r+') as file:
-        data = json.load(file)
-        # Convert key of each poem line from string to array of chars
-        for poem_data in data:
-            for line_data in poem_data['lines']:
-                line_data['key'] = list(line_data['key'])
-        file.seek(0)
-        json.dump(data, file)
-        file.truncate()
-        file.close()
+@poem_transformer
+def split_key(poem):
+    for line in poem['lines']:
+        line['key'] = list(line['key'])
+
+@collection.command('generateorders')
+@poem_transformer
+def generate_orders(poem):
+    order = 0
+    for line in poem['lines']:
+        line['order'] = order
+        order += 1
 
 if __name__ == '__main__':
     collection()
